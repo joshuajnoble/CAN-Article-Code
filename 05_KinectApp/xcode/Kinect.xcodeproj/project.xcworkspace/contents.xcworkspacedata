@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <Group
+      location = "group:../../../../blocks/kinect"
+      name = "kinect">
+      <Group
+         location = "group:include"
+         name = "include">
+         <FileRef
+            location = "group:Kinect.h">
+         </FileRef>
+         <FileRef
+            location = "group:libfreenect.h">
+         </FileRef>
+         <FileRef
+            location = "group:libusb.h">
+         </FileRef>
+      </Group>
+      <Group
+         location = "group:lib"
+         name = "lib">
+         <Group
+            location = "group:macosx"
+            name = "macosx">
+            <FileRef
+               location = "group:libfreenect.a">
+            </FileRef>
+            <FileRef
+               location = "group:libusb-1.0.a">
+            </FileRef>
+         </Group>
+      </Group>
+      <Group
+         location = "group:samples"
+         name = "samples">
+         <Group
+            location = "group:kinectBasic"
+            name = "kinectBasic">
+            <Group
+               location = "group:include"
+               name = "include">
+               <FileRef
+                  location = "group:Resources.h">
+               </FileRef>
+            </Group>
+            <Group
+               location = "group:resources"
+               name = "resources">
+               <FileRef
+                  location = "group:cinder_app_icon.ico">
+               </FileRef>
+               <FileRef
+                  location = "group:CinderApp.icns">
+               </FileRef>
+            </Group>
+            <Group
+               location = "group:src"
+               name = "src">
+               <FileRef
+                  location = "group:kinectBasicApp.cpp">
+               </FileRef>
+            </Group>
+            <Group
+               location = "group:vc10"
+               name = "vc10">
+               <FileRef
+                  location = "group:kinectBasic.sln">
+               </FileRef>
+               <FileRef
+                  location = "group:kinectBasic.vcxproj">
+               </FileRef>
+               <FileRef
+                  location = "group:kinectBasic.vcxproj.filters">
+               </FileRef>
+               <FileRef
+                  location = "group:Resources.rc">
+               </FileRef>
+            </Group>
+            <Group
+               location = "group:vc9"
+               name = "vc9">
+               <FileRef
+                  location = "group:kinectBasic.sln">
+               </FileRef>
+               <FileRef
+                  location = "group:kinectBasic.vcproj">
+               </FileRef>
+               <FileRef
+                  location = "group:Resources.rc">
+               </FileRef>
+            </Group>
+            <Group
+               location = "group:xcode"
+               name = "xcode">
+               <FileRef
+                  location = "group:Info.plist">
+               </FileRef>
+               <FileRef
+                  location = "group:kinectBasic.xcodeproj">
+               </FileRef>
+               <FileRef
+                  location = "group:kinectBasic_Prefix.pch">
+               </FileRef>
+            </Group>
+         </Group>
+         <Group
+            location = "group:kinectPointCloud"
+            name = "kinectPointCloud">
+            <Group
+               location = "group:include"
+               name = "include">
+               <FileRef
+                  location = "group:Resources.h">
+               </FileRef>
+            </Group>
+            <Group
+               location = "group:resources"
+               name = "resources">
+               <FileRef
+                  location = "group:cinder_app_icon.ico">
+               </FileRef>
+               <FileRef
+                  location = "group:CinderApp.icns">
+               </FileRef>
+               <FileRef
+                  location = "group:mainFrag.glsl">
+               </FileRef>
+               <FileRef
+                  location = "group:mainVert.glsl">
+               </FileRef>
+            </Group>
+            <Group
+               location = "group:src"
+               name = "src">
+               <FileRef
+                  location = "group:kinectPointCloudApp.cpp">
+               </FileRef>
+            </Group>
+            <Group
+               location = "group:vc10"
+               name = "vc10">
+               <FileRef
+                  location = "group:kinectPointCloud.sln">
+               </FileRef>
+               <FileRef
+                  location = "group:kinectPointCloud.vcxproj">
+               </FileRef>
+               <FileRef
+                  location = "group:kinectPointCloud.vcxproj.filters">
+               </FileRef>
+               <FileRef
+                  location = "group:Resources.rc">
+               </FileRef>
+            </Group>
+            <Group
+               location = "group:vc9"
+               name = "vc9">
+               <FileRef
+                  location = "group:kinectPointCloud.sln">
+               </FileRef>
+               <FileRef
+                  location = "group:kinectPointCloud.vcproj">
+               </FileRef>
+               <FileRef
+                  location = "group:Resources.rc">
+               </FileRef>
+            </Group>
+            <Group
+               location = "group:xcode"
+               name = "xcode">
+               <FileRef
+                  location = "group:Info.plist">
+               </FileRef>
+               <FileRef
+                  location = "group:kinectPointCloud.xcodeproj">
+               </FileRef>
+               <FileRef
+                  location = "group:kinectPointCloud_Prefix.pch">
+               </FileRef>
+            </Group>
+         </Group>
+      </Group>
+      <Group
+         location = "group:src"
+         name = "src">
+         <FileRef
+            location = "group:Kinect.cpp">
+         </FileRef>
+      </Group>
+   </Group>
+   <FileRef
+      location = "self:Kinect.xcodeproj">
+   </FileRef>
+</Workspace>
