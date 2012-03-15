@@ -424,7 +424,21 @@ void KinectApp::update()
 		mTransformPrev = mTransform;
 	}
     
-    //V::UserBoneList boneList = _manager->getUser(1)->getBoneList();
+    // here's where we get the bone list:
+    V::OpenNIBoneList boneList = _manager->getUser(1)->getBoneList();
+    for(V::OpenNIBoneList::iterator it = boneList.begin(); it != boneList.end(); ++it) {
+        V::OpenNIBone* bone = *it;
+        if(bone->id == XN_SKEL_TORSO) {
+            // Look at the spine joint to follow the user with the camera
+            Vec3f spinePos(bone->position[0], bone->position[1], bone->position[2]); // make a conv method for these
+            Vec3f spine = spinePos * mEyePoint.z;
+            mLookAt.x = spine.x * 0.333f;
+            mLookAt.y = spine.y * 0.333f;
+            mEyePoint.x = -mLookAt.x * 0.5f;
+            mEyePoint.y = -mLookAt.y * 0.25f;
+        }
+    }
+    
     
     /*
     
