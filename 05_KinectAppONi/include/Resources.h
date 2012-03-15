@@ -1,6 +1,5 @@
 #pragma once
-#include <cinder/CinderResources.h>
-
+#include "cinder/CinderResources.h"
 // Shaders
 
 #define RES_SHADER_FRAG_120		CINDER_RESOURCE(../resources/, frag_120.fs, 128, GLSL)
