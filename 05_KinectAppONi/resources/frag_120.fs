@@ -31,26 +31,26 @@ void main(void)
 		vec3 eye = normalize(-eyePoint);
 
 		// Calculate light and reflection positions
-		vec3 light = normalize(lightPosition.xyz - position.xyz);   
-		vec3 reflection = normalize(-reflect(light, normal.xyz));
+		vec3 light = normalize(lightPosition.xyz - positionOut.xyz);   
+		vec3 reflection = normalize(-reflect(light, normalOut.xyz));
 
 		// Calculate ambient, diffuse, and specular values
 		vec4 ambient = lightAmbient;
-		vec4 diffuse = clamp(lightDiffuse * max(dot(normal.xyz, light), 0.0), 0.0, 1.0);     
+		vec4 diffuse = clamp(lightDiffuse * max(dot(normalOut.xyz, light), 0.0), 0.0, 1.0);     
 		vec4 specular = clamp(lightSpecular * pow(max(dot(reflection, eye), 0.0), 0.3 * shininess), 0.0, 1.0); 
 	
 		// Set color from light
-		color = ambient + diffuse + specular;
+		color = lightAmbient + lightDiffuse + lightSpecular;
 
 		// Mix with UV map
-		color = mix(color, vec4(uv.s, uv.t, 1.0, 1.0), uvmix);
+		color = mix(color, vec4(uvOut.s, uvOut.t, 1.0, 1.0), uvOut);
 
 	}
 	else
 	{
 
 		// Color point white
-		color = vec4(1.0, 1.0, 1.0, brightness > 0.0 ? 1.0 : 0.0);
+		color = vec4(1.0, 1.0, 1.0, brightnessOut > 0.0 ? 1.0 : 0.0);
 	
 	}
 

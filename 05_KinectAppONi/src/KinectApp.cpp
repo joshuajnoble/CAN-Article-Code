@@ -95,12 +95,19 @@ public:
 	static const int KINECT_DEPTH_HEIGHT = 480;
 	static const int KINECT_DEPTH_FPS = 30;
     
+    float threshold;
     bool mRemoveBackground;
 	bool mRemoveBackgroundPrev;
 	ci::Vec3f mScale;
 	
-	ci::gl::Texture mTextureDepth;
+	ci::gl::Texture mDepthTexture;
 	ci::gl::Texture::Format mTextureFormat;
+    
+    Surface mColorSurface;
+    
+    Channel mClearChannel;
+    Channel mDepthChannel;
+    Channel mPrevDepthChannel;
     
 	KinectApp();
 	~KinectApp();
@@ -109,8 +116,9 @@ public:
 	void update();
 	void draw();
 	void keyDown( KeyEvent event );
+    void subtractBackground();
     void shutdown();
-    
+    void prepareSettings( Settings *settings );
     
     // Camera
 	ci::CameraPersp mCamera;
@@ -159,6 +167,11 @@ public:
 	void onLostUser( V::UserEvent event );
     
     float mMeshUvMix;
+    
+    // ----------------------------
+    // OpenNI
+    // ----------------------------
+    
     uint16_t*				pixels;
     
 	ImageSourceRef getColorImage()
@@ -187,7 +200,6 @@ public:
 		uint8_t *activeDepth = _device0->getDepthMap24();
 		return ImageSourceRef( new ImageSourceKinectColor( activeDepth, KINECT_DEPTH_WIDTH, KINECT_DEPTH_HEIGHT ) );
 	}
-	void prepareSettings( Settings *settings );
     
 	V::OpenNIDeviceManager*	_manager;
 	V::OpenNIDevice::Ref	_device0;
@@ -196,7 +208,7 @@ public:
 
 
 
-KinectApp::KinectApp() {
+KinectApp::KinectApp():threshold(30.f) {
     
 }
 
@@ -221,56 +233,15 @@ void KinectApp::prepareSettings(ci::app::AppBasic::Settings * settings)
     
 }
 
-// This routine creates a vertex buffer object which 
-// matches the dimensions of the Kinect depth image.
-void KinectApp::initMesh()
-{
-    
-	// Clear the VBO if it already exists
-	if (mVboMesh)
-		mVboMesh.reset();
-    
-	// Iterate through the mesh dimensions
-	for (int32_t y = 0; y < MESH_HEIGHT; y++)
-		for (int32_t x = 0; x < MESH_WIDTH; x++)
-		{
-            
-			// Set the index of the vertex in the VBO so it is
-			// numbered left to right, top to bottom
-			mVboIndices.push_back(x + y * MESH_WIDTH);
-            
-			// Set the position of the vertex in world space
-			mVboVertices.push_back(Vec3f((float)x - (float)MESH_WIDTH * 0.5f, (float)y - (float)MESH_HEIGHT * 0.5f, 0.0f));
-            
-			// Use percentage of the position for the texture coordinate
-			mVboTexCoords.push_back(Vec2f((float)x / (float)MESH_WIDTH, (float)y / (float)MESH_HEIGHT));
-            
-		}
-	
-	// Create VBO
-	mVboMesh = gl::VboMesh(mVboIndices.size(), mVboIndices.size(), mVboLayout, GL_POINTS);
-	mVboMesh.bufferIndices(mVboIndices);
-	mVboMesh.bufferPositions(mVboVertices);
-	mVboMesh.bufferTexCoords2d(0, mVboTexCoords);
-    
-	// WORKAROUND: The bufferPositions call does not
-	// unbind the VBO
-	mVboMesh.unbindBuffers();
-    
-	// Clean up
-	mVboIndices.clear();
-	mVboTexCoords.clear();
-	mVboVertices.clear();
-    
-	// Call the resize event to reset the camera 
-	// and OpenGL state
-	resize(ResizeEvent(getWindowSize()));
-    
-}
-
-
 void KinectApp::setup()
 {
+    
+    mColorSurface = Surface( KINECT_COLOR_WIDTH, KINECT_COLOR_HEIGHT, false );
+    
+	mDepthChannel = Channel( KINECT_DEPTH_WIDTH, KINECT_DEPTH_HEIGHT );
+    mPrevDepthChannel = Channel( KINECT_COLOR_WIDTH, KINECT_COLOR_HEIGHT );
+    
+    mClearChannel = Channel( KINECT_COLOR_WIDTH, KINECT_COLOR_HEIGHT );
     
     // Load the shader
 	loadShaders();
@@ -346,13 +317,174 @@ void KinectApp::setup()
     
 	// Initialize texture
 	mTextureFormat.setInternalFormat(GL_RGBA_FLOAT32_ATI);
-	mTextureDepth = gl::Texture(Surface32f(MESH_WIDTH, MESH_HEIGHT, false, SurfaceChannelOrder::RGBA), mTextureFormat);
+	mDepthTexture = gl::Texture(Surface32f(MESH_WIDTH, MESH_HEIGHT, false, SurfaceChannelOrder::RGBA), mTextureFormat);
     
 	// Create VBO
 	initMesh();
-
-
+    
+    
 }
+
+
+void KinectApp::update()
+{	
+    
+    // Update frame rate and elapsed time
+	mElapsedFrames = (float)getElapsedFrames();
+	mElapsedSeconds = (float)getElapsedSeconds();
+	mFrameRate = getAverageFps();
+    
+    // update the OpenNI manager
+    _manager->update();
+    
+    mColorSurface = getColorImage();
+	mDepthChannel = getDepthImage();
+    
+    //mDepthTexture.update( getDepthImage() );
+    mDepthTexture = gl::Texture((Surface32f) mDepthChannel);
+    
+    subtractBackground();
+    
+    // Toggle fullscreen mode
+	if (mFullScreen != mFullScreenPrev)
+	{
+		setFullScreen(mFullScreen);
+		mFullScreenPrev = mFullScreen;
+	}
+    
+	// Toggle between transform and pass-thru shaders
+	if (mTransform != mTransformPrev)
+	{
+		mShader = mTransform ? mShaderTransform : mShaderPassThru;
+		mTransformPrev = mTransform;
+	}
+    
+    if( _manager->getNumOfUsers() > 0 ) 
+    {
+        
+        //mOneUserTex.update( getUserImage(1) );
+        
+        // here's where we get the bone list:
+        V::OpenNIBoneList boneList = _manager->getFirstUser()->getBoneList();
+        for(V::OpenNIBoneList::iterator it = boneList.begin(); it != boneList.end(); ++it) {
+            V::OpenNIBone* bone = *it;
+            if(bone->id == XN_SKEL_TORSO) {
+                // Look at the spine joint to follow the user with the camera
+                Vec3f spinePos(bone->position[0], bone->position[1], bone->position[2]); // make a conv method for these
+                Vec3f spine = spinePos * mEyePoint.z;
+                mLookAt.x = spine.x * 0.333f;
+                mLookAt.y = spine.y * 0.333f;
+                mEyePoint.x = -mLookAt.x * 0.5f;
+                mEyePoint.y = -mLookAt.y * 0.25f;
+            }
+        }
+    }
+    
+    // Update camera
+	mCamera.lookAt(mEyePoint, mLookAt);
+}
+
+
+void KinectApp::draw()
+{
+	// Set up the scene
+	gl::clear(mBackgroundColor, true);
+	gl::setViewport(getWindowBounds());
+	//gl::setMatrices(mCamera);
+    
+	// Bind texture
+	mDepthTexture.bind(0);
+    
+	// Bind shader
+	mShader.bind();
+	
+	// Position world
+	gl::pushModelView();
+	gl::scale(-1.0f, -1.0f, -1.0f);
+	gl::rotate(mRotation);
+	
+	// Set uniforms
+	mShader.uniform("brightTolerance", mBrightTolerance);
+	mShader.uniform("depth", mDepth);
+	mShader.uniform("eyePoint", mEyePoint);
+	mShader.uniform("height", (float)MESH_HEIGHT);
+	mShader.uniform("lightAmbient", mLightAmbient);
+	mShader.uniform("lightDiffuse", mLightDiffuse);
+	mShader.uniform("lightPosition", mLightPosition);
+	mShader.uniform("lightSpecular", mLightSpecular);
+	mShader.uniform("mvp", gl::getProjection() * gl::getModelView());
+	mShader.uniform("positions", 0);
+	mShader.uniform("scale", mScale);
+	mShader.uniform("shininess", mLightShininess);
+	mShader.uniform("transform", mTransform);
+	mShader.uniform("uvmix", mMeshUvMix);
+	mShader.uniform("width", (float)MESH_WIDTH);
+    
+	// Draw VBO
+	gl::draw(mVboMesh);
+    
+	// Stop drawing
+	gl::popModelView();
+	mShader.unbind();
+    
+    mDepthTexture.unbind();
+    
+    // debug draw
+	//gl::draw(mVboMesh);
+    //gl::draw(mDepthTexture);
+    
+	// Draw parameters
+	params::InterfaceGl::draw();
+}
+
+
+// This routine creates a vertex buffer object which 
+// matches the dimensions of the Kinect depth image.
+void KinectApp::initMesh()
+{
+    
+	// Clear the VBO if it already exists
+	if (mVboMesh)
+		mVboMesh.reset();
+    
+	// Iterate through the mesh dimensions
+	for (int32_t y = 0; y < MESH_HEIGHT; y++)
+		for (int32_t x = 0; x < MESH_WIDTH; x++)
+		{
+            
+			// Set the index of the vertex in the VBO so it is
+			// numbered left to right, top to bottom
+			mVboIndices.push_back(x + y * MESH_WIDTH);
+            
+			// Set the position of the vertex in world space
+			mVboVertices.push_back(Vec3f((float)x - (float)MESH_WIDTH * 0.5f, (float)y - (float)MESH_HEIGHT * 0.5f, 0.0f));
+            
+			// Use percentage of the position for the texture coordinate
+			mVboTexCoords.push_back(Vec2f((float)x / (float)MESH_WIDTH, (float)y / (float)MESH_HEIGHT));
+            
+		}
+	
+	// Create VBO
+	mVboMesh = gl::VboMesh(mVboIndices.size(), mVboIndices.size(), mVboLayout, GL_POINTS);
+	mVboMesh.bufferIndices(mVboIndices);
+	mVboMesh.bufferPositions(mVboVertices);
+	mVboMesh.bufferTexCoords2d(0, mVboTexCoords);
+    
+	// WORKAROUND: The bufferPositions call does not
+	// unbind the VBO
+	mVboMesh.unbindBuffers();
+    
+	// Clean up
+	mVboIndices.clear();
+	mVboTexCoords.clear();
+	mVboVertices.clear();
+    
+	// Call the resize event to reset the camera 
+	// and OpenGL state
+	resize(ResizeEvent(getWindowSize()));
+    
+}
+
 
 // This routine cleans up the application as it is exiting
 void KinectApp::shutdown()
@@ -362,8 +494,8 @@ void KinectApp::shutdown()
 	//mKinect.stop();
     
 	// Clean up
-	if (mTextureDepth)
-		mTextureDepth.reset();
+	if (mDepthTexture)
+		mDepthTexture.reset();
 	mVboIndices.clear();
 	if (mVboMesh)
 		mVboMesh.reset();
@@ -397,116 +529,6 @@ void KinectApp::trace(const string & message)
     
 }
 
-void KinectApp::update()
-{	
-    
-    
-    // Update frame rate and elapsed time
-	mElapsedFrames = (float)getElapsedFrames();
-	mElapsedSeconds = (float)getElapsedSeconds();
-	mFrameRate = getAverageFps();
-    
-    // update the OpenNI manager
-    _manager->update();
-    
-
-    // Toggle fullscreen mode
-	if (mFullScreen != mFullScreenPrev)
-	{
-		setFullScreen(mFullScreen);
-		mFullScreenPrev = mFullScreen;
-	}
-    
-	// Toggle between transform and pass-thru shaders
-	if (mTransform != mTransformPrev)
-	{
-		mShader = mTransform ? mShaderTransform : mShaderPassThru;
-		mTransformPrev = mTransform;
-	}
-    
-    // here's where we get the bone list:
-    V::OpenNIBoneList boneList = _manager->getUser(1)->getBoneList();
-    for(V::OpenNIBoneList::iterator it = boneList.begin(); it != boneList.end(); ++it) {
-        V::OpenNIBone* bone = *it;
-        if(bone->id == XN_SKEL_TORSO) {
-            // Look at the spine joint to follow the user with the camera
-            Vec3f spinePos(bone->position[0], bone->position[1], bone->position[2]); // make a conv method for these
-            Vec3f spine = spinePos * mEyePoint.z;
-            mLookAt.x = spine.x * 0.333f;
-            mLookAt.y = spine.y * 0.333f;
-            mEyePoint.x = -mLookAt.x * 0.5f;
-            mEyePoint.y = -mLookAt.y * 0.25f;
-        }
-    }
-    
-    
-    /*
-    
-	// Uses manager to handle users.
-	if( _manager->hasUser(1) ) 
-		mOneUserTex.update( getUserImage(1) );
-    
-    
-    for( std::map<int, gl::Texture>::iterator it=mUsersTexMap.begin();
-        it != mUsersTexMap.end();
-        ++it )
-    {
-        it->second.update( getUserImage( it->first ) );
-    }
-    */
-}
-
-
-void KinectApp::draw()
-{
-	// Set up the scene
-	gl::clear(mBackgroundColor, true);
-	gl::setViewport(getWindowBounds());
-	gl::setMatrices(mCamera);
-    
-	// Bind texture
-	mTextureDepth.bind(0);
-    
-	// Bind shader
-	mShader.bind();
-	
-	// Position world
-	gl::pushModelView();
-	gl::scale(-1.0f, -1.0f, -1.0f);
-	gl::rotate(mRotation);
-	
-	// Set uniforms
-	mShader.uniform("brightTolerance", mBrightTolerance);
-	mShader.uniform("depth", mDepth);
-	mShader.uniform("eyePoint", mEyePoint);
-	mShader.uniform("height", (float)MESH_HEIGHT);
-	mShader.uniform("lightAmbient", mLightAmbient);
-	mShader.uniform("lightDiffuse", mLightDiffuse);
-	mShader.uniform("lightPosition", mLightPosition);
-	mShader.uniform("lightSpecular", mLightSpecular);
-	mShader.uniform("mvp", gl::getProjection() * gl::getModelView());
-	mShader.uniform("positions", 0);
-	mShader.uniform("scale", mScale);
-	mShader.uniform("shininess", mLightShininess);
-	mShader.uniform("transform", mTransform);
-	mShader.uniform("uvmix", mMeshUvMix);
-	mShader.uniform("width", (float)MESH_WIDTH);
-    
-	// Draw VBO
-	gl::draw(mVboMesh);
-    
-	// Stop drawing
-	gl::popModelView();
-	mShader.unbind();
-	mTextureDepth.unbind();
-    
-	// Draw parameters
-	params::InterfaceGl::draw();
-}
-
-
-
-
 void KinectApp::keyDown( KeyEvent event )
 {
 	if( event.getCode() == KeyEvent::KEY_ESCAPE )
@@ -523,7 +545,7 @@ void KinectApp::keyDown( KeyEvent event )
         app::console() << "Reset: " << (key-48) << std::endl;
         _device0->resetUser( key-48 ); // Abort calibration. the user still remains active.
     }
-    //    app::console() << "Org User Count: " << _device0->getUserGenerator()->GetNumberOfUsers() << std::endl;
+    //app::console() << "Org User Count: " << _device0->getUserGenerator()->GetNumberOfUsers() << std::endl;
 }
 
 // Load GLSL shaders from resources
@@ -615,6 +637,36 @@ void KinectApp::loadShaders()
 	mShader = mShaderTransform;
     
 }
+
+void KinectApp::subtractBackground()
+{
+    
+    if(mRemoveBackgroundPrev) {
+        mPrevDepthChannel = mDepthChannel.clone(true);
+    }
+    
+//    if(mClearSurface) {
+//        mPrevDepthChannel = mClearChannel.clone(true);
+//    }
+    
+    Area a(0, 0, KINECT_DEPTH_WIDTH, KINECT_DEPTH_HEIGHT);
+    //Channel::ConstIter bgIter = mDepthChannel.getIter(a);
+    Channel::Iter bgIter = mDepthChannel.getIter();
+    Channel::Iter newIter = mPrevDepthChannel.getIter();
+    
+    Surface::Iter colorIter ( mColorSurface.getIter() );
+    
+    while(bgIter.line() && newIter.line()) {
+        while(bgIter.pixel() && newIter.pixel()) {
+            if( newIter.v() - bgIter.v() > threshold) {
+                newIter.v() = bgIter.v();
+            } else {
+                colorIter.a() = 0;
+            }
+        }
+    }
+    
+   }
 
 
 void KinectApp::onNewUser( V::UserEvent event )

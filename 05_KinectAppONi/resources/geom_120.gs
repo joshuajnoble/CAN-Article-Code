@@ -14,17 +14,17 @@ uniform bool transform;
 uniform float width;
 
 // Input attributes
-varying in vec4 texCoord;
-varying in float brightness;
-varying in vec4 normal;
-varying in vec4 position;
-varying in vec4 uvIn;
+varying vec4 texCoord[1];
+varying float brightness[1];
+varying vec4 normal[1];
+varying vec4 position[1];
+varying vec4 uvIn[1];
 
 // Output attributes
 varying vec4 normalOut;
 varying vec4 positionOut;
 varying vec4 uvOut;
-varying float brightness;
+varying float brightnessOut;
 
 // Adds a vertex to the current primitive
 void addVertex(vec4 vert, vec4 norm, float bright)
@@ -37,7 +37,7 @@ void addVertex(vec4 vert, vec4 norm, float bright)
 	brightnessOut = bright;
 
 	// Passes original vertex and texture coordinate to fragment shader
-	uvOut = texCoord;
+	uvOut = texCoord[0];
 
 	// Create vertex
 	EmitVertex();
@@ -56,16 +56,16 @@ void main(void)
 		vec2 pixel = vec2(1.0 / width, 1.0 / height);
 
 		// Get brightness at corners of quad
-		float bright0 = texture2D(positions, uv.st).r;
-		float bright1 = texture2D(positions, uv.st + vec2(pixel.x, 0.0)).r;
-		float bright2 = texture2D(positions, uv.st + pixel).r;
-		float bright3 = texture2D(positions, uv.st + vec2(0.0, pixel.y)).r;
+		float bright0 = texture2D(positions, uvIn[0].st).r;
+		float bright1 = texture2D(positions, uvIn[0].st + vec2(pixel.x, 0.0)).r;
+		float bright2 = texture2D(positions, uvIn[0].st + pixel).r;
+		float bright3 = texture2D(positions, uvIn[0].st + vec2(0.0, pixel.y)).r;
 
 		// Find corners of quad
-		vec4 vert0 = vertex;
-		vec4 vert1 = vertex + vec4(1.0, 0.0, 0.0, 0.0);
-		vec4 vert2 = vertex + vec4(1.0, 1.0, 0.0, 0.0);
-		vec4 vert3 = vertex + vec4(0.0, 1.0, 0.0, 0.0);
+		vec4 vert0 = gl_Position;
+		vec4 vert1 = gl_Position + vec4(1.0, 0.0, 0.0, 0.0);
+		vec4 vert2 = gl_Position + vec4(1.0, 1.0, 0.0, 0.0);
+		vec4 vert3 = gl_Position + vec4(0.0, 1.0, 0.0, 0.0);
 
 		// Set depth for each vertex
 		vert0.z = depth * ((1.0 - bright0) * scale.z);
@@ -117,16 +117,16 @@ void main(void)
 	else
 	{
 
-		uvOut = uv;
-		brightnessOut = texture2D(positions, uv.st).r;
+		uvOut = uvIn[0];
+		brightnessOut = texture2D(positions, uvIn[0].st).r;
 
 		// Update position
-		position.z = depth * ((1.0 - brightness) * scale.z);
-		positionOut = mvp * (position * vec4(-scale.x, scale.y, 1.0, 1.0));
+		positionOut.z = depth * ((1.0 - brightness[0]) * scale.z);
+		positionOut = mvp * (gl_Position * vec4(-scale.x, scale.y, 1.0, 1.0));
 		normalOut = vec4(0., 0., 0., 0.);
 
 		// Pass-thru
-		gl_Position = position;
+		gl_Position = positionOut;
 
 		EmitVertex();
 		EndPrimitive();

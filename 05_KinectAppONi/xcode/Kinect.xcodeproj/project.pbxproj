@@ -24,6 +24,9 @@
 		ED6A6BFC1511719E00EC7BC3 /* VOpenNINetwork.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED6A6BF31511719E00EC7BC3 /* VOpenNINetwork.cpp */; };
 		ED6A6BFD1511719E00EC7BC3 /* VOpenNIRecorder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED6A6BF51511719E00EC7BC3 /* VOpenNIRecorder.cpp */; };
 		ED6A6BFE1511719E00EC7BC3 /* VOpenNIUser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED6A6BF81511719E00EC7BC3 /* VOpenNIUser.cpp */; };
+		ED9D823215128BF100AB2225 /* frag_120.fs in Resources */ = {isa = PBXBuildFile; fileRef = EDC4D6901511AA0500479E7A /* frag_120.fs */; };
+		ED9D823315128BF100AB2225 /* geom_120.gs in Resources */ = {isa = PBXBuildFile; fileRef = EDC4D6921511AA0500479E7A /* geom_120.gs */; };
+		ED9D823415128BF100AB2225 /* vert_120.vs in Resources */ = {isa = PBXBuildFile; fileRef = EDC4D6941511AA0500479E7A /* vert_120.vs */; };
 		EDC4D6961511AA0500479E7A /* frag_120.fs in Sources */ = {isa = PBXBuildFile; fileRef = EDC4D6901511AA0500479E7A /* frag_120.fs */; };
 		EDC4D6971511AA0500479E7A /* frag_150.glsl in Resources */ = {isa = PBXBuildFile; fileRef = EDC4D6911511AA0500479E7A /* frag_150.glsl */; };
 		EDC4D6981511AA0500479E7A /* geom_120.gs in Sources */ = {isa = PBXBuildFile; fileRef = EDC4D6921511AA0500479E7A /* geom_120.gs */; };
@@ -279,6 +282,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ED9D823215128BF100AB2225 /* frag_120.fs in Resources */,
+				ED9D823315128BF100AB2225 /* geom_120.gs in Resources */,
+				ED9D823415128BF100AB2225 /* vert_120.vs in Resources */,
 				00CCAF15116A9FEE008396D5 /* CinderApp.icns in Resources */,
 				EDC4D6971511AA0500479E7A /* frag_150.glsl in Resources */,
 				EDC4D6991511AA0500479E7A /* geom_150.glsl in Resources */,

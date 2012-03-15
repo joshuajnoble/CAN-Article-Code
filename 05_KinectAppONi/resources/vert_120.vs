@@ -23,6 +23,6 @@ void main(void)
 	//vertex = gl_Vertex;
 	
 	// Set position
-	gl_Position = vertex;
+	gl_Position = mvp * gl_Vertex;;
 
 }
