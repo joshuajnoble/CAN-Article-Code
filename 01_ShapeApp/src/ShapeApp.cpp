@@ -22,7 +22,7 @@ public:
 	// Cinder callbacks
 	void draw();
 	void prepareSettings(ci::app::AppBasic::Settings * settings);
-	void resize(ci::app::ResizeEvent event);
+	void resize();
 	void setup();
 	void shutdown();
 	void update();
@@ -99,7 +99,7 @@ void ShapeApp::draw()
 	mShader.unbind();
 
 	// Draw the params interface
-	params::InterfaceGl::draw();
+	mParams.draw();
 
 }
 
@@ -199,7 +199,7 @@ void ShapeApp::prepareSettings(ci::app::AppBasic::Settings * settings)
 }
 
 // Handles window resize event
-void ShapeApp::resize(ResizeEvent event)
+void ShapeApp::resize()
 {
 
 	// Set up OpenGL
@@ -258,7 +258,7 @@ void ShapeApp::setup()
 	mParams.addButton("Quit", std::bind(& ShapeApp::quit, this), "key=esc");
 
 	// Run the first resize event to set up OpenGL and point list
-	resize(ResizeEvent(getWindowSize()));
+	resize();
 
 }
 
