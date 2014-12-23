@@ -32,7 +32,7 @@ public:
 	void mouseMove(ci::app::MouseEvent event);
 	void mouseWheel(ci::app::MouseEvent event);
 	void prepareSettings(ci::app::AppBasic::Settings * settings);
-	void resize(ci::app::ResizeEvent event);
+	void resize();
 	void setup();
 	void shutdown();
 	void update();
@@ -172,7 +172,7 @@ void MeshApp::draw()
 	mFbo.unbindTexture();
 
 	// Draw the params interface
-	params::InterfaceGl::draw();
+	mParams.draw();
 
 }
 
@@ -306,7 +306,7 @@ void MeshApp::initMesh()
 
 	// Call the resize event to reset the camera 
 	// and OpenGL state
-	resize(ResizeEvent(getWindowSize()));
+	resize();
 
 }
 
@@ -478,7 +478,7 @@ void MeshApp::prepareSettings(ci::app::AppBasic::Settings * settings)
 }
 
 // Handles window resize event
-void MeshApp::resize(ResizeEvent event)
+void MeshApp::resize()
 {
 
 	// Reset camera

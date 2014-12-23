@@ -24,7 +24,7 @@ public:
 	void draw();
 	void mouseDrag(ci::app::MouseEvent event);
 	void prepareSettings(ci::app::AppBasic::Settings * settings);
-	void resize(ci::app::ResizeEvent event);
+	void resize();
 	void setup();
 	void shutdown();
 	void update();
@@ -99,7 +99,7 @@ void BrushApp::draw()
 	mTexture.unbind();
 
 	// Draw the params interface
-	params::InterfaceGl::draw();
+	mParams.draw();
 
 }
 
@@ -198,7 +198,7 @@ void BrushApp::prepareSettings(ci::app::AppBasic::Settings * settings)
 }
 
 // Handles window resize event
-void BrushApp::resize(ResizeEvent event)
+void BrushApp::resize()
 {
 
 	// Set up OpenGL
@@ -252,7 +252,7 @@ void BrushApp::setup()
 	mParams.addButton("Quit", std::bind(& BrushApp::quit, this), "key=esc");
 
 	// Run the first resize event to set up OpenGL and point list
-	resize(ResizeEvent(getWindowSize()));
+	resize();
 
 }
 

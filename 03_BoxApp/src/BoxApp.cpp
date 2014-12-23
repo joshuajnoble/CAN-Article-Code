@@ -30,7 +30,7 @@ public:
 	void mouseMove(ci::app::MouseEvent event);
 	void mouseWheel(ci::app::MouseEvent event);
 	void prepareSettings(ci::app::AppBasic::Settings * settings);
-	void resize(ci::app::ResizeEvent event);
+	void resize();
 	void setup();
 	void shutdown();
 	void update();
@@ -149,7 +149,7 @@ void BoxApp::draw()
 	gl::popModelView();
 
 	// Draw the params interface
-	params::InterfaceGl::draw();
+	mParams.draw();
 
 }
 
@@ -190,7 +190,7 @@ void BoxApp::initMesh()
 	mVboVertices.clear();
 
 	// Resize the window to reset view
-	resize(ResizeEvent(getWindowSize()));
+	resize();
 
 }
 
@@ -349,7 +349,7 @@ void BoxApp::prepareSettings(ci::app::AppBasic::Settings * settings)
 }
 
 // Handles window resize event
-void BoxApp::resize(ResizeEvent event)
+void BoxApp::resize()
 {
 
 	// Reset camera

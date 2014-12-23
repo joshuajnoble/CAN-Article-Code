@@ -434,7 +434,7 @@ void KinectApp::draw()
     //gl::draw(mDepthTexture);
     
 	// Draw parameters
-	params::InterfaceGl::draw();
+	mParams.draw();
 }
 
 
@@ -481,7 +481,7 @@ void KinectApp::initMesh()
     
 	// Call the resize event to reset the camera 
 	// and OpenGL state
-	resize(ResizeEvent(getWindowSize()));
+	resize();
     
 }
 
